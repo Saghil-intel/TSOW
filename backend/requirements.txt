@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+python-multipart
+streamlit
+requests
+docling
+llama-parse
+python-dotenv
+httpx
