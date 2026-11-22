@@ -11,10 +11,6 @@
 | CRM          |              |
 
 
-| Value Proposition | Value Proposition |
-| ----------------- | ----------------- |
-
-
 | Targeted AI Approach  | Targeted AI Approach |
 | --------------------- | -------------------- |
 | Use Case              |                      |
