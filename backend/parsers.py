@@ -46,44 +46,54 @@ def parse_with_docling(file_path: str) -> str:
 
 def parse_tsow_with_llamaparse(file_path: str) -> str:
     """
-    Parse Intel TSOW template using LlamaParse.
-    Returns extracted Markdown structure.
+    Parse the TSOW template with LlamaParse.
+    .env switches:
+      LLAMAPARSE_PREMIUM=true   -> option 2 (higher-accuracy mode, more credits)
+      LLAMAPARSE_INSTRUCTION=.. -> override the default parsing instruction
     """
-
     api_key = os.getenv("LLAMA_CLOUD_API_KEY")
-
     if not api_key:
-        raise ValueError(
-            "LLAMA_CLOUD_API_KEY is missing from .env"
-        )
+        raise ValueError("LLAMA_CLOUD_API_KEY is missing from .env")
+
+    instruction = os.getenv(
+        "LLAMAPARSE_INSTRUCTION",
+        "This document is a form template made of tables. Preserve EVERY label "
+        "and field name exactly as printed, in reading order. This includes "
+        "single-cell rows, labels with empty answer cells, merged cells and "
+        "header rows. Never skip or merge a label because it has no content "
+        "next to it. Output each label as its own table row or heading.",
+    )
+    premium = os.getenv("LLAMAPARSE_PREMIUM", "false").lower() == "true"
+
+    # Try the full option set first; drop options this installed version rejects.
+    attempts = [
+        dict(parsing_instruction=instruction, premium_mode=premium, invalidate_cache=True),
+        dict(parsing_instruction=instruction, premium_mode=premium),
+        dict(parsing_instruction=instruction),
+        dict(),
+    ]
+
+    parser = None
+    for extra in attempts:
+        try:
+            parser = LlamaParse(api_key=api_key, result_type="markdown", **extra)
+            print(f"[LLAMAPARSE] Options in use: {list(extra) or 'defaults'}")
+            break
+        except Exception as e:
+            print(f"[LLAMAPARSE] Options {list(extra)} not supported: {e}")
 
     try:
-
-        parser = LlamaParse(
-            api_key=api_key,
-            result_type="markdown"
-        )
-
         documents = parser.load_data(file_path)
-
-        markdown = "\n\n".join(
-            document.text
-            for document in documents
-        )
+        markdown = "\n\n".join(d.text for d in documents)
 
         if not markdown or not markdown.strip():
-            raise ValueError(
-                "LlamaParse returned empty TSOW content."
-            )
+            raise ValueError("LlamaParse returned empty TSOW content.")
 
         print("[LLAMAPARSE] TSOW template parsed successfully.")
-
         return markdown
 
     except Exception as e:
-        raise RuntimeError(
-            f"LlamaParse failed: {str(e)}"
-        ) from e
+        raise RuntimeError(f"LlamaParse failed: {str(e)}") from e
 
 import tempfile
 import threading
