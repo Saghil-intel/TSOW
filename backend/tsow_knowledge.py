@@ -1,157 +1,430 @@
-# questionnaire_hints:
-#   list of lowercase phrases. A questionnaire row is used for this field only
-#   if its QUESTION (first cell) contains one of these phrases.
-#   [] means the questionnaire has no source for this field (skip the LLM).
-#   Omit the key entirely to fall back to semantic retrieval.
+
+# ============================================================
+# TSOW FIELD KNOWLEDGE
+# Generic field definitions for questionnaire extraction.
 #
-# answer_format:
-#   short instruction telling the LLM what shape the answer must have.
+# IMPORTANT:
+# - Do not add questionnaire-specific expected answers here.
+# - Do not use questionnaire_hints to select source rows.
+# - The complete questionnaire is provided to the LLM.
+# - These definitions explain what information belongs in
+#   each TSOW field.
+# ============================================================
 
 TSOW_FIELD_KNOWLEDGE = [
 
     {
         "standard_field": "Company Name",
-        "description": "Official name of the organization or company participating in the engagement.",
-        "alternate_names": ["Company", "Organization", "Organization Name", "ISV Name", "Partner Name", "Business Name"],
-        "examples": ["Assessli", "Microsoft", "Intel partner organization"],
-        "matching_guidance": "Identify the company or organization. Do not confuse it with the product name.",
-        "questionnaire_hints": ["product details"],
-        "answer_format": "Company name only, e.g. Assessli"
+        "output_path": "company_name",
+        "description": (
+            "The official name of the company, organization, "
+            "ISV, or business participating in the engagement."
+        ),
+        "alternate_names": [
+            "Company", "Organization", "Organization Name",
+            "ISV Name", "Partner Name", "Business Name"
+        ],
+        "matching_guidance": (
+            "Identify the organization participating in the engagement. "
+            "Distinguish the company from its product, platform, "
+            "customers, and technology partners. Search the entire "
+            "questionnaire because the company name may appear in "
+            "any answer."
+        ),
+        "answer_format": (
+            "Preserve the official organization name. Include a "
+            "commonly stated abbreviation when useful."
+        )
     },
+
     {
         "standard_field": "Product Name",
-        "description": "Name of the product, software, platform, application or service being developed or evaluated.",
-        "alternate_names": ["Product", "Solution Name", "Application Name", "Platform Name", "Software Product", "Product / Solution"],
-        "examples": ["Large Behavioral Model", "AI recommendation platform"],
-        "matching_guidance": "Identify the actual product or solution, not just an individual AI model.",
-        "questionnaire_hints": ["product details"],
-        "answer_format": "Product name only, e.g. Large Behavioral Model (LBM)"
+        "output_path": "product_name",
+        "description": (
+            "The name of the product, software, platform, application, "
+            "service, or solution being developed, evaluated, or optimized."
+        ),
+        "alternate_names": [
+            "Product", "Solution Name", "Application Name",
+            "Platform Name", "Software Product", "Product / Solution"
+        ],
+        "matching_guidance": (
+            "Identify the actual product or solution. Do not confuse "
+            "the product with the company, an individual AI model, "
+            "a framework, or a hardware platform. Search all answers "
+            "for product references."
+        ),
+        "answer_format": (
+            "Product or solution name, preserving its stated full name "
+            "and abbreviation where available."
+        )
     },
+
     {
         "standard_field": "BU",
-        "description": "Business Unit or organizational division associated with the company, product or engagement.",
-        "alternate_names": ["Business Unit", "Division", "Business Division", "Organization Unit"],
-        "examples": ["Data Center Group", "Client Computing Group"],
-        "matching_guidance": "Identify an organizational business division, not hardware or software.",
-        "questionnaire_hints": [],
-        "answer_format": "Business unit name only"
+        "output_path": "bu",
+        "description": (
+            "The business unit, organizational division, or formal "
+            "business group associated with the engagement."
+        ),
+        "alternate_names": [
+            "Business Unit", "Division", "Business Division",
+            "Organization Unit", "BU"
+        ],
+        "matching_guidance": (
+            "Extract only an explicitly identified organizational "
+            "business unit or division. Do not infer a BU from a "
+            "product category, customer industry, cloud provider, "
+            "hardware platform, or technical workload."
+        ),
+        "answer_format": "Business unit or division name."
     },
+
     {
         "standard_field": "Key Contacts",
-        "description": "Names, roles and contact details of stakeholders involved in the engagement.",
-        "alternate_names": ["Contacts", "Key Stakeholders", "Project Contacts", "Stakeholders", "Engagement Team"],
-        "examples": ["Intel contact", "ISV contact", "CRM contact", "Technical lead"],
-        "matching_guidance": "Identify people, roles and organizational affiliations. Preserve contact subcategories such as Intel, ISV and CRM.",
-        "questionnaire_hints": [],
-        "answer_format": "Names with roles, comma-separated"
+        "output_path": "key_contacts",
+        "description": (
+            "People involved in the engagement, including their names, "
+            "roles, responsibilities, and organizational affiliations."
+        ),
+        "alternate_names": [
+            "Contacts", "Key Stakeholders", "Project Contacts",
+            "Stakeholders", "Engagement Team"
+        ],
+        "matching_guidance": (
+            "Identify explicitly named people and their roles. Preserve "
+            "the distinction between Intel, ISV, and CRM contacts. "
+            "Do not infer a person's identity from an email domain, "
+            "company name, or job function."
+        ),
+        "answer_format": (
+            "Place supported contact information in the appropriate "
+            "Intel, ISV, or CRM subfield. Use null when unavailable."
+        )
     },
+
     {
         "standard_field": "Value Proposition",
-        "description": "Business value, benefits, competitive advantages and problems addressed by the product or solution.",
-        "alternate_names": ["Business Value", "Solution Benefits", "Customer Value", "Value Statement", "Business Impact"],
-        "examples": ["Reduced inference costs", "Improved customer experience"],
-        "matching_guidance": "Identify why the solution is valuable and what benefits it provides. Do not restate the product description.",
-        "questionnaire_hints": ["product details"],
-        "answer_format": "One short sentence on the benefit to the customer or Intel"
+        "output_path": "value_proposition",
+        "description": (
+            "The business and technical value of the solution, including "
+            "the problem it addresses, benefits to users or customers, "
+            "differentiators, and expected business impact."
+        ),
+        "alternate_names": [
+            "Business Value", "Solution Benefits", "Customer Value",
+            "Value Statement", "Business Impact"
+        ],
+        "matching_guidance": (
+            "Extract the complete explanation of why the solution "
+            "matters and what value it provides. Look beyond sections "
+            "labelled product details. Include relevant capabilities, "
+            "problems addressed, customer benefits, and stated business "
+            "objectives. Do not reduce a detailed explanation to a "
+            "generic product description."
+        ),
+        "answer_format": (
+            "A detailed, readable description preserving all important "
+            "business benefits and technical value."
+        )
     },
+
     {
         "standard_field": "Targeted AI Approach",
-        "description": "AI methodology, architecture and technical approach used or planned for implementing the solution.",
-        "alternate_names": ["AI Approach", "AI Strategy", "AI Architecture", "AI Methodology", "Target AI Architecture"],
-        "examples": ["Retrieval-Augmented Generation", "Agentic AI", "Graph-based reasoning"],
-        "matching_guidance": "Identify the overall AI methodology or architecture, not just a model name.",
-        "questionnaire_hints": ["product details", "topologies"],
-        "answer_format": "One short sentence naming the AI methodology"
+        "output_path": "targeted_ai_approach",
+        "description": (
+            "The overall AI methodology, architecture, models, "
+            "workloads, software technologies, optimization methods, "
+            "operating system, and target hardware used or planned "
+            "for the solution."
+        ),
+        "alternate_names": [
+            "AI Approach", "AI Strategy", "AI Architecture",
+            "AI Methodology", "Target AI Architecture"
+        ],
+        "matching_guidance": (
+            "This is a parent section. Populate its existing child "
+            "fields rather than creating a separate value. Classify "
+            "each technical detail according to the definitions of "
+            "the child fields. A single questionnaire answer may "
+            "provide information for multiple child fields."
+        ),
+        "answer_format": (
+            "Populate the existing nested fields individually."
+        )
     },
+
     {
         "standard_field": "Use Case",
-        "description": "Specific business scenario or practical application where the product or AI solution is used.",
-        "alternate_names": ["Application", "Business Use Case", "AI Use Case", "Usage Scenario", "Target Application"],
-        "examples": ["Personalized recommendations", "Predictive maintenance", "Customer behavior analysis"],
-        "matching_guidance": "Identify what the solution does in a real-world scenario.",
-        "questionnaire_hints": ["product details", "workload details"],
-        "answer_format": "One short phrase naming the application"
+        "output_path": "targeted_ai_approach.use_case",
+        "description": (
+            "The real-world business or technical scenario in which "
+            "the AI solution is applied, including the task it performs "
+            "and the users or processes it serves."
+        ),
+        "alternate_names": [
+            "Application", "Business Use Case", "AI Use Case",
+            "Usage Scenario", "Target Application"
+        ],
+        "matching_guidance": (
+            "Identify the actual application of the solution. Look "
+            "throughout the questionnaire for user-facing scenarios, "
+            "business problems, and intended outcomes. Do not confuse "
+            "a use case with a model name or implementation framework."
+        ),
+        "answer_format": (
+            "Describe the supported use cases, preserving meaningful "
+            "details rather than returning only a broad category."
+        )
     },
+
     {
         "standard_field": "AI Workload",
-        "description": "Nature, scale and computational requirements of AI workloads, including training, inference, data volume and concurrency.",
-        "alternate_names": ["Workload", "AI Processing Requirements", "Training Workload", "Inference Workload", "Computational Requirements"],
-        "examples": ["Real-time inference", "Large-scale model training", "Streaming data processing"],
-        "matching_guidance": "Identify the actual AI processing workload, not merely the hardware.",
-        "questionnaire_hints": ["workload details"],
-        "answer_format": "Short semicolon-separated list of workload types, with concurrency if stated"
+        "output_path": "targeted_ai_approach.ai_workload",
+        "description": (
+            "The AI and data-processing activities performed by the "
+            "solution, including training, inference, fine-tuning, "
+            "classification, generation, streaming, graph processing, "
+            "concurrency, and other computational workloads."
+        ),
+        "alternate_names": [
+            "Workload", "AI Processing Requirements",
+            "Training Workload", "Inference Workload",
+            "Computational Requirements"
+        ],
+        "matching_guidance": (
+            "Identify what computation the system performs, how it "
+            "processes data, and any stated scale or concurrency. "
+            "Distinguish workload descriptions from hardware "
+            "specifications and measured performance results. "
+            "Preserve model names and technologies when they explain "
+            "the workload."
+        ),
+        "answer_format": (
+            "A detailed description of workload types, processing "
+            "activities, scale, and concurrency where stated."
+        )
     },
+
     {
         "standard_field": "Intel Software Stack",
-        "description": "Intel software tools, frameworks, libraries, SDKs and optimization technologies used or planned.",
-        "alternate_names": ["Software Stack", "Technology Stack", "Intel Software", "Software Frameworks", "Development Framework"],
-        "examples": ["OpenVINO", "oneAPI", "Intel oneDNN"],
-        "matching_guidance": "Identify software technologies and frameworks. Do not classify hardware or operating systems here.",
-        "questionnaire_hints": ["frameworks"],
-        "answer_format": "Comma-separated Intel software names only (e.g. OpenVINO, IPEX); exclude third-party tools"
+        "output_path": "targeted_ai_approach.intel_software_stack",
+        "description": (
+            "Intel software products and technologies used or targeted "
+            "for the solution, together with relevant existing frameworks "
+            "when needed to explain the software environment or migration."
+        ),
+        "alternate_names": [
+            "Software Stack", "Technology Stack", "Intel Software",
+            "Software Frameworks", "Development Framework"
+        ],
+        "matching_guidance": (
+            "Identify Intel software technologies explicitly mentioned, "
+            "including libraries, SDKs, runtimes, and optimization tools. "
+            "Preserve the distinction between currently used software "
+            "and proposed or target Intel technologies. Include relevant "
+            "non-Intel frameworks only when needed to explain the current "
+            "stack, integration, or migration path. Do not classify "
+            "hardware or operating systems here."
+        ),
+        "answer_format": (
+            "List technologies with their current or target status "
+            "and stated purpose where available."
+        )
     },
+
     {
         "standard_field": "Model/s",
-        "description": "Names and types of machine learning, deep learning, generative AI or other models used or planned.",
-        "alternate_names": ["Models", "AI Models", "ML Models", "Foundation Models", "LLMs", "Model Architecture"],
-        "examples": ["Llama", "Qwen", "BERT", "Large Behavioral Model"],
-        "matching_guidance": "Identify actual model names and types. Distinguish models from optimization techniques.",
-        "questionnaire_hints": ["topologies"],
-        "answer_format": "Comma-separated model names only"
+        "output_path": "targeted_ai_approach.models",
+        "description": (
+            "Machine learning, deep learning, generative AI, foundation "
+            "models, and other model architectures used or planned "
+            "for the solution."
+        ),
+        "alternate_names": [
+            "Models", "AI Models", "ML Models",
+            "Foundation Models", "LLMs", "Model Architecture"
+        ],
+        "matching_guidance": (
+            "Extract model names and relevant architectural details. "
+            "Preserve model variants, parameter counts, layers, "
+            "components, model roles, and the tasks they perform "
+            "when stated. Distinguish models from frameworks, "
+            "databases, and optimization techniques."
+        ),
+        "answer_format": (
+            "Include model names and their relevant technical "
+            "characteristics and roles."
+        )
     },
+
     {
         "standard_field": "Model Optimizations",
-        "description": "Techniques applied or planned to improve model performance, efficiency, memory consumption or inference speed.",
-        "alternate_names": ["Model Optimization", "Optimization Techniques", "AI Optimization", "Inference Optimization", "Model Acceleration"],
-        "examples": ["Quantization", "Pruning", "Knowledge distillation", "Graph optimization"],
-        "matching_guidance": "Identify optimization methods, not model names or hardware platforms.",
-        "questionnaire_hints": ["workload details", "frameworks"],
-        "answer_format": "Comma-separated optimization techniques only"
+        "output_path": "targeted_ai_approach.model_optimizations",
+        "description": (
+            "Techniques and technologies used or planned to improve "
+            "model inference, training efficiency, latency, throughput, "
+            "memory consumption, accuracy, or computational efficiency."
+        ),
+        "alternate_names": [
+            "Model Optimization", "Optimization Techniques",
+            "AI Optimization", "Inference Optimization",
+            "Model Acceleration"
+        ],
+        "matching_guidance": (
+            "Identify explicitly stated optimization methods such as "
+            "fine-tuning approaches, parameter-efficient techniques, "
+            "quantization, pruning, precision changes, graph optimization, "
+            "and hardware acceleration methods. Preserve whether a "
+            "technique is currently used, being evaluated, or planned. "
+            "Do not invent optimizations merely because they are common."
+        ),
+        "answer_format": (
+            "Describe each supported optimization technique and "
+            "its stated purpose or status."
+        )
     },
+
     {
         "standard_field": "OS",
-        "description": "Operating system and version used or planned for development, training or deployment.",
-        "alternate_names": ["Operating System", "Platform OS", "Deployment OS", "System Software"],
-        "examples": ["Ubuntu Linux", "Red Hat Enterprise Linux", "Windows Server"],
-        "matching_guidance": "Identify the operating system, not the software framework.",
-        "questionnaire_hints": ["what os"],
-        "answer_format": "OS name and version only, e.g. Ubuntu 24.04 LTS"
+        "output_path": "targeted_ai_approach.os",
+        "description": (
+            "Operating systems and versions used or planned for "
+            "development, training, testing, or deployment."
+        ),
+        "alternate_names": [
+            "Operating System", "Platform OS",
+            "Deployment OS", "System Software"
+        ],
+        "matching_guidance": (
+            "Extract operating system names, distributions, versions, "
+            "and deployment options. Distinguish current environments "
+            "from optional or planned environments. Do not confuse "
+            "an operating system with a programming language or "
+            "software framework."
+        ),
+        "answer_format": (
+            "Preserve operating system names, versions, and stated "
+            "deployment context."
+        )
     },
+
     {
         "standard_field": "Intel Target Hardware",
-        "description": "Intel hardware platforms targeted for development, training, optimization or inference.",
-        "alternate_names": ["Target Hardware", "Hardware Platform", "Target Platform", "Processor", "CPU", "GPU", "Intel Architecture", "Deployment Hardware"],
-        "examples": ["Intel Xeon 6", "Intel Core Ultra", "Intel Gaudi"],
-        "matching_guidance": "Identify Intel hardware platforms the solution is being optimized for. Do not list cloud instances or non-Intel hardware.",
-        "questionnaire_hints": ["product details"],
-        "answer_format": "Intel hardware names only, e.g. Intel Xeon 6"
+        "output_path": "targeted_ai_approach.intel_target_hardware",
+        "description": (
+            "Intel hardware platforms and architectures targeted for "
+            "development, training, inference, optimization, testing, "
+            "or deployment."
+        ),
+        "alternate_names": [
+            "Target Hardware", "Hardware Platform", "Target Platform",
+            "Processor", "CPU", "GPU", "Intel Architecture",
+            "Deployment Hardware", "Target Processor"
+        ],
+        "matching_guidance": (
+            "Search the entire questionnaire for Intel hardware "
+            "references, regardless of the question heading. Identify "
+            "Intel processor families, architecture generations, "
+            "specific processor models, accelerators, and other Intel "
+            "platforms. Include the stated purpose, such as inference "
+            "or deployment, when available. Distinguish Intel hardware "
+            "from third-party cloud instances and non-Intel hardware. "
+            "Do not infer an Intel SKU from an architecture family."
+        ),
+        "answer_format": (
+            "Include each explicitly stated Intel hardware platform, "
+            "architecture, model, and its stated purpose."
+        )
     },
+
     {
         "standard_field": "Performance Metrics",
-        "description": "Quantitative measurements used to evaluate AI solution or hardware performance.",
-        "alternate_names": ["Performance", "KPIs", "Benchmark Results", "Performance Indicators", "System Metrics"],
-        "examples": ["Inference latency", "Throughput", "Tokens per second", "Accuracy", "Memory utilization"],
-        "matching_guidance": "Identify measurable performance indicators and values. Distinguish targets from measured results. Do not list hardware instances.",
-        "questionnaire_hints": ["product details", "workload details"],
-        "answer_format": "Comma-separated metric names; include values only if stated"
+        "output_path": "performance_metrics",
+        "description": (
+            "Quantitative performance measurements, benchmark results, "
+            "performance targets, and workload capacity specifications "
+            "used to evaluate the solution."
+        ),
+        "alternate_names": [
+            "Performance", "KPIs", "Benchmark Results",
+            "Performance Indicators", "System Metrics",
+            "Latency", "Throughput", "Concurrency"
+        ],
+        "matching_guidance": (
+            "Search the complete questionnaire for quantitative or "
+            "qualitative performance information, even when it appears "
+            "under product details, workload, infrastructure, or other "
+            "sections. Look for latency, response time, throughput, "
+            "requests per second, tokens or sequences per second, "
+            "concurrency, accuracy, FPS, memory utilization, and "
+            "other measurable indicators. Clearly distinguish measured "
+            "results, desired targets, and workload specifications. "
+            "A concurrency figure is not automatically a measured "
+            "throughput result. Never invent numerical values."
+        ),
+        "answer_format": (
+            "Preserve each metric, its value and unit, and whether it "
+            "is a measured result, target, or workload specification."
+        )
     },
+
     {
         "standard_field": "Success Criteria",
-        "description": "Expected outcomes, measurable goals and acceptance conditions used to determine engagement success.",
-        "alternate_names": ["Success Metrics", "Acceptance Criteria", "Expected Outcomes", "Project Goals", "Business Objectives"],
-        "examples": ["Achieve target inference latency", "Improve throughput", "Successfully deploy on Intel hardware"],
-        "matching_guidance": "Identify what must be achieved for the project to be considered successful.",
-        "questionnaire_hints": [],
-        "answer_format": "Short list of measurable goals"
+        "output_path": "success_criteria",
+        "description": (
+            "The business, technical, operational, and measurable "
+            "outcomes that define whether the engagement or solution "
+            "has achieved its intended objectives."
+        ),
+        "alternate_names": [
+            "Success Metrics", "Acceptance Criteria",
+            "Expected Outcomes", "Project Goals",
+            "Business Objectives"
+        ],
+        "matching_guidance": (
+            "Search the entire questionnaire for explicit objectives "
+            "and conditions for success, including optimization goals, "
+            "cost reduction, latency improvement, throughput, privacy, "
+            "scalability, deployment outcomes, and acceptance conditions. "
+            "These may appear in product descriptions or roadmap answers "
+            "rather than a section named success criteria. Preserve "
+            "numerical targets when explicitly stated. Distinguish "
+            "objectives from achieved results and do not turn a general "
+            "aspiration into a measurable commitment."
+        ),
+        "answer_format": (
+            "Include all supported success objectives and acceptance "
+            "conditions, preserving their scope and measurable targets."
+        )
     },
+
     {
         "standard_field": "Dependencies",
-        "description": "External requirements, prerequisites, resources and technical or organizational dependencies required for implementation.",
-        "alternate_names": ["Requirements", "Prerequisites", "Technical Dependencies", "Project Dependencies", "Infrastructure Requirements"],
-        "examples": ["Hardware availability", "Software compatibility", "Dataset availability", "Engineering resources"],
-        "matching_guidance": "Identify resources or conditions required for implementation.",
-        "questionnaire_hints": [],
-        "answer_format": "Short comma-separated list"
+        "output_path": "dependencies",
+        "description": (
+            "Technical, infrastructure, data, software, hardware, "
+            "organizational, and external requirements needed to "
+            "implement, integrate, test, or deploy the solution."
+        ),
+        "alternate_names": [
+            "Requirements", "Prerequisites", "Technical Dependencies",
+            "Project Dependencies", "Infrastructure Requirements"
+        ],
+        "matching_guidance": (
+            "Identify explicitly stated prerequisites, infrastructure, "
+            "data sources and formats, software components, cloud "
+            "services, hardware resources, integration requirements, "
+            "and organizational dependencies. Include deployment "
+            "environments and required engineering resources when "
+            "they are stated as requirements. Distinguish dependencies "
+            "from technologies that are merely examples or optional "
+            "alternatives."
+        ),
+        "answer_format": (
+            "Provide a structured, detailed summary of supported "
+            "dependencies, preserving names, versions, and purposes."
+        )
     }
 
 ]
